@@ -1,0 +1,204 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 20)) &&
+        data.themePreference in ['DARK', 'LIGHT', 'SYSTEM'] &&
+        (!('defaultAddressId' in data) || data.defaultAddressId == null || (data.defaultAddressId is string && data.defaultAddressId.size() <= 128)) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSavedAddress(data, userId) {
+      return data.userId == userId &&
+        data.label is string && data.label.size() >= 1 && data.label.size() <= 40 &&
+        data.houseNo is string && data.houseNo.size() >= 1 && data.houseNo.size() <= 80 &&
+        data.street is string && data.street.size() >= 1 && data.street.size() <= 120 &&
+        data.area is string && data.area.size() >= 1 && data.area.size() <= 100 &&
+        data.city is string && data.city.size() >= 1 && data.city.size() <= 80 &&
+        data.state is string && data.state.size() >= 1 && data.state.size() <= 80 &&
+        data.pinCode is string && data.pinCode.matches('^[1-9][0-9]{5}$') &&
+        (!('landmark' in data) || data.landmark == null || (data.landmark is string && data.landmark.size() <= 120)) &&
+        data.defaultAddress is bool &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidWishlistItem(data, userId) {
+      return data.userId == userId &&
+        data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 200 &&
+        (!('brand' in data) || data.brand == null || (data.brand is string && data.brand.size() <= 80)) &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+        data.bestPrice is number && data.bestPrice >= 0 &&
+        data.bestPlatform is string && data.bestPlatform.size() >= 1 && data.bestPlatform.size() <= 80 &&
+        data.externalUrl is string && data.externalUrl.size() >= 1 && data.externalUrl.size() <= 500 &&
+        (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 300)) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSearchRecord(data, userId) {
+      return data.userId == userId &&
+        data.queryText is string && data.queryText.size() >= 1 && data.queryText.size() <= 250 &&
+        data.parsedCategory is string && data.parsedCategory.size() >= 1 && data.parsedCategory.size() <= 80 &&
+        data.pinCode is string && data.pinCode.matches('^[1-9][0-9]{5}$') &&
+        data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidComparisonRecord(data, userId) {
+      return data.userId == userId &&
+        data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 200 &&
+        data.cheapestPlatform is string && data.cheapestPlatform.size() >= 1 && data.cheapestPlatform.size() <= 80 &&
+        data.lowestFinalCost is number && data.lowestFinalCost >= 0 &&
+        data.platformsCount is int && data.platformsCount >= 1 && data.platformsCount <= 50 &&
+        data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidPriceAlert(data, userId) {
+      return data.userId == userId &&
+        data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 200 &&
+        data.targetPrice is number && data.targetPrice > 0 &&
+        data.currentBestPrice is number && data.currentBestPrice >= 0 &&
+        data.enabled is bool &&
+        data.status is string && data.status.size() >= 1 && data.status.size() <= 80 &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPriceObservation(data, userId) {
+      return data.userId == userId &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+        data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 200 &&
+        data.productUrl is string && data.productUrl.size() <= 500 &&
+        data.platform is string && data.platform.size() >= 1 && data.platform.size() <= 80 &&
+        data.currentPrice is number && data.currentPrice >= 0 &&
+        (!('historicalLowest' in data) || data.historicalLowest == null || (data.historicalLowest is number && data.historicalLowest >= 0)) &&
+        (!('historicalAverage' in data) || data.historicalAverage == null || (data.historicalAverage is number && data.historicalAverage >= 0)) &&
+        (!('historicalHighest' in data) || data.historicalHighest == null || (data.historicalHighest is number && data.historicalHighest >= 0)) &&
+        data.observationDate is string && data.observationDate.size() >= 4 && data.observationDate.size() <= 40 &&
+        data.source is string && data.source.size() >= 1 && data.source.size() <= 120 &&
+        data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId) && isOwner(userId) &&
+        incoming().keys().hasAll(['userId', 'name', 'email', 'themePreference', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['userId', 'name', 'email', 'phone', 'themePreference', 'defaultAddressId', 'createdAt', 'updatedAt']) &&
+        isValidUserProfile(incoming(), userId);
+      allow update: if isValidId(userId) && isOwner(userId) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'email', 'phone', 'themePreference', 'defaultAddressId', 'updatedAt']);
+      allow delete: if isValidId(userId) && isOwner(userId);
+
+      match /addresses/{addressId} {
+        allow get: if isValidId(userId) && isValidId(addressId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(addressId) && isOwner(userId) &&
+          incoming().keys().hasAll(['userId', 'label', 'houseNo', 'street', 'area', 'city', 'state', 'pinCode', 'defaultAddress', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'label', 'houseNo', 'street', 'area', 'city', 'state', 'pinCode', 'landmark', 'defaultAddress', 'createdAt', 'updatedAt']) &&
+          isValidSavedAddress(incoming(), userId);
+        allow update: if isValidId(userId) && isValidId(addressId) && isOwner(userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidSavedAddress(incoming(), userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['label', 'houseNo', 'street', 'area', 'city', 'state', 'pinCode', 'landmark', 'defaultAddress', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(addressId) && isOwner(userId);
+      }
+
+      match /wishlist/{itemId} {
+        allow get: if isValidId(userId) && isValidId(itemId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(itemId) && isOwner(userId) &&
+          incoming().keys().hasAll(['userId', 'productName', 'category', 'bestPrice', 'bestPlatform', 'externalUrl', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'productName', 'brand', 'category', 'bestPrice', 'bestPlatform', 'externalUrl', 'notes', 'createdAt', 'updatedAt']) &&
+          isValidWishlistItem(incoming(), userId);
+        allow update: if isValidId(userId) && isValidId(itemId) && isOwner(userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidWishlistItem(incoming(), userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['productName', 'brand', 'category', 'bestPrice', 'bestPlatform', 'externalUrl', 'notes', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(itemId) && isOwner(userId);
+      }
+
+      match /searches/{searchId} {
+        allow get: if isValidId(userId) && isValidId(searchId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(searchId) && isOwner(userId) &&
+          incoming().keys().hasAll(['userId', 'queryText', 'parsedCategory', 'pinCode', 'createdAt']) &&
+          incoming().keys().hasOnly(['userId', 'queryText', 'parsedCategory', 'pinCode', 'createdAt']) &&
+          isValidSearchRecord(incoming(), userId);
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(searchId) && isOwner(userId);
+      }
+
+      match /comparisons/{compId} {
+        allow get: if isValidId(userId) && isValidId(compId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(compId) && isOwner(userId) &&
+          incoming().keys().hasAll(['userId', 'productName', 'cheapestPlatform', 'lowestFinalCost', 'platformsCount', 'createdAt']) &&
+          incoming().keys().hasOnly(['userId', 'productName', 'cheapestPlatform', 'lowestFinalCost', 'platformsCount', 'createdAt']) &&
+          isValidComparisonRecord(incoming(), userId);
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(compId) && isOwner(userId);
+      }
+
+      match /alerts/{alertId} {
+        allow get: if isValidId(userId) && isValidId(alertId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(alertId) && isOwner(userId) &&
+          incoming().keys().hasAll(['userId', 'productName', 'targetPrice', 'currentBestPrice', 'enabled', 'status', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'productName', 'targetPrice', 'currentBestPrice', 'enabled', 'status', 'createdAt', 'updatedAt']) &&
+          isValidPriceAlert(incoming(), userId);
+        allow update: if isValidId(userId) && isValidId(alertId) && isOwner(userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidPriceAlert(incoming(), userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['targetPrice', 'currentBestPrice', 'enabled', 'status', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(alertId) && isOwner(userId);
+      }
+
+      match /observations/{obsId} {
+        allow get: if isValidId(userId) && isValidId(obsId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(obsId) && isOwner(userId) &&
+          incoming().keys().hasAll(['userId', 'category', 'productName', 'productUrl', 'platform', 'currentPrice', 'observationDate', 'source', 'createdAt']) &&
+          incoming().keys().hasOnly(['userId', 'category', 'productName', 'productUrl', 'platform', 'currentPrice', 'historicalLowest', 'historicalAverage', 'historicalHighest', 'observationDate', 'source', 'createdAt']) &&
+          isValidPriceObservation(incoming(), userId);
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(obsId) && isOwner(userId);
+      }
+    }
+  }
+}

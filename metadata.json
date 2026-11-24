@@ -1,0 +1,8 @@
+{
+  "name": "SmartBuy AI",
+  "description": "Universal shopping & grocery price comparison, Buyhatke price history analysis, and basket recommendation engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

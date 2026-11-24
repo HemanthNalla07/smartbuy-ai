@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "SmartBuy AI user profile and account preferences.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase UID" },
+        "name": { "type": "string", "description": "Display name" },
+        "email": { "type": "string", "description": "User email" },
+        "phone": { "type": "string", "description": "Optional phone number" },
+        "themePreference": { "type": "string", "enum": ["DARK", "LIGHT", "SYSTEM"] },
+        "defaultAddressId": { "type": "string", "description": "Default saved address ID" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "name", "email", "themePreference", "createdAt", "updatedAt"]
+    },
+    "SavedAddress": {
+      "title": "SavedAddress",
+      "description": "Saved Indian delivery address with PIN code.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "label": { "type": "string" },
+        "houseNo": { "type": "string" },
+        "street": { "type": "string" },
+        "area": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "pinCode": { "type": "string" },
+        "landmark": { "type": "string" },
+        "defaultAddress": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "label", "houseNo", "street", "area", "city", "state", "pinCode", "defaultAddress", "createdAt", "updatedAt"]
+    },
+    "WishlistItem": {
+      "title": "WishlistItem",
+      "description": "Saved product in user wishlist.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productName": { "type": "string" },
+        "brand": { "type": "string" },
+        "category": { "type": "string" },
+        "bestPrice": { "type": "number" },
+        "bestPlatform": { "type": "string" },
+        "externalUrl": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productName", "category", "bestPrice", "bestPlatform", "externalUrl", "createdAt", "updatedAt"]
+    },
+    "SearchRecord": {
+      "title": "SearchRecord",
+      "description": "User search query history record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "queryText": { "type": "string" },
+        "parsedCategory": { "type": "string" },
+        "pinCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "queryText", "parsedCategory", "pinCode", "createdAt"]
+    },
+    "ComparisonRecord": {
+      "title": "ComparisonRecord",
+      "description": "Historical product price comparison record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productName": { "type": "string" },
+        "cheapestPlatform": { "type": "string" },
+        "lowestFinalCost": { "type": "number" },
+        "platformsCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productName", "cheapestPlatform", "lowestFinalCost", "platformsCount", "createdAt"]
+    },
+    "PriceAlert": {
+      "title": "PriceAlert",
+      "description": "Price drop alert monitored by user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productName": { "type": "string" },
+        "targetPrice": { "type": "number" },
+        "currentBestPrice": { "type": "number" },
+        "enabled": { "type": "boolean" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productName", "targetPrice", "currentBestPrice", "enabled", "status", "createdAt", "updatedAt"]
+    },
+    "PriceObservation": {
+      "title": "PriceObservation",
+      "description": "Buyhatke price observation logged by user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string" },
+        "productName": { "type": "string" },
+        "productUrl": { "type": "string" },
+        "platform": { "type": "string" },
+        "currentPrice": { "type": "number" },
+        "historicalLowest": { "type": "number" },
+        "historicalAverage": { "type": "number" },
+        "historicalHighest": { "type": "number" },
+        "observationDate": { "type": "string" },
+        "source": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "productName", "productUrl", "platform", "currentPrice", "observationDate", "source", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile document"
+    },
+    "/users/{userId}/addresses/{addressId}": {
+      "schema": { "$ref": "#/entities/SavedAddress" },
+      "description": "User saved delivery addresses"
+    },
+    "/users/{userId}/wishlist/{itemId}": {
+      "schema": { "$ref": "#/entities/WishlistItem" },
+      "description": "User saved wishlist items"
+    },
+    "/users/{userId}/searches/{searchId}": {
+      "schema": { "$ref": "#/entities/SearchRecord" },
+      "description": "User recent searches"
+    },
+    "/users/{userId}/comparisons/{compId}": {
+      "schema": { "$ref": "#/entities/ComparisonRecord" },
+      "description": "User comparison history"
+    },
+    "/users/{userId}/alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/PriceAlert" },
+      "description": "User price drop alerts"
+    },
+    "/users/{userId}/observations/{obsId}": {
+      "schema": { "$ref": "#/entities/PriceObservation" },
+      "description": "User Buyhatke price observations"
+    }
+  }
+}
